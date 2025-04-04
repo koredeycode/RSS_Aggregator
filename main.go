@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -32,8 +31,6 @@ func main() {
 		log.Fatal("DBURL environment variable not set")
 	}
 
-	fmt.Println(dbURL)
-
 	conn, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatal("Error connecting to database:", err)
@@ -58,8 +55,16 @@ func main() {
 
 	v1Router.Get("/ready", handlerReadiness)
 	v1Router.Get("/err", handlerErr)
+
 	v1Router.Post("/users", apiCfg.handlerCreateUser)
-	v1Router.Get("/users", apiCfg.handlerGetUser)
+	v1Router.Get("/users", apiCfg.middlewareAuth(apiCfg.handlerGetUser))
+
+	v1Router.Post("/feeds", apiCfg.middlewareAuth(apiCfg.handlerCreateFeed))
+	v1Router.Get("/feeds", apiCfg.handlerGetFeeds)
+
+	v1Router.Post("/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerCreateFeedFollow))
+	v1Router.Get("/feed_follows", apiCfg.middlewareAuth(apiCfg.handlerGetFeedFollows))
+	v1Router.Delete("/feed_follows/{feedFollowId}", apiCfg.middlewareAuth(apiCfg.handlerDeleteFeedFollow))
 
 	router.Mount("/v1", v1Router)
 
